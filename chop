@@ -44,7 +44,6 @@ def process_line(line, timestamp_processor):
 def main():
     # parse command line args
     args = parse_commandline_args()
-    args
 
     # setup timestamp converter
     LOG_PATTERN = "%Y-%m-%d %H:%M:%S.%f"
