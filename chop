@@ -1,0 +1,101 @@
+#!/usr/local/bin/python
+import argparse
+from datetime import datetime
+from functools import partial
+import os
+
+from progressbar import ProgressBar, Percentage, Bar
+
+"""
+Extract entries in a time interval from a log file.
+"""
+
+
+def parse_commandline_args():
+    parser = argparse.ArgumentParser(
+        description='Extract entries in a time interval from a log file.')
+    parser.add_argument('--start', action='store', dest='start_time',
+                        default="2000-01-01 01:00:00.000",
+                        help='Log start timestamp')
+    parser.add_argument('--end', action='store', dest='end_time',
+                        default="3000-12-31 01:00:00.000",
+                        help='Log end timestamp')
+    parser.add_argument('--dest', action='store', dest='dest',
+                        default=None,
+                        help=('Destination directory. '
+                              'Defaults to directories of each logfile, resp.'
+                              ))
+    parser.add_argument('files', metavar='FILE', type=str, nargs='+',
+                        help='Log file(s) to be chopped.')
+    return parser.parse_args()
+
+
+def count_lines(filename):
+    return sum(1 for line in open(filename, 'r'))
+
+
+def process_line(line, timestamp_processor):
+    try:
+        return True, timestamp_processor(line[:23])
+    except:
+        return False, None
+
+
+def main():
+    # parse command line args
+    args = parse_commandline_args()
+    args
+
+    # setup timestamp converter
+    LOG_PATTERN = "%Y-%m-%d %H:%M:%S.%f"
+    str_to_datetime = partial(
+        lambda x, y: datetime.strptime(y, x),
+        LOG_PATTERN,
+        )
+
+    # convert timestamp bookends to datetime objects
+    start_time = str_to_datetime(args.start_time)
+    end_time = str_to_datetime(args.end_time)
+
+    for filename in args.files:
+        print '***', filename, '***'
+
+        num_lines = count_lines(filename)
+
+        dest = args.dest or os.path.dirname(os.path.abspath(filename))
+        outfile = os.path.join(
+                    dest,
+                    os.path.basename(filename) + '.chopped')
+
+        with open(filename, 'r') as f:
+            with open(outfile, 'w') as o:
+                entry = ''
+                bar = ProgressBar(
+                        widgets=[Percentage(), Bar()],
+                        maxval=num_lines,
+                        ).start()
+                for ix, line in enumerate(f):
+                    starts_log, dt = process_line(
+                        line, str_to_datetime)
+
+                    if starts_log and \
+                       dt >= start_time and \
+                       dt <= end_time:
+                        if entry != '':
+                            o.write(entry)
+                            entry = ''
+                        entry += line
+                    elif not starts_log and entry != '':
+                        entry += line
+
+                    bar.update(ix)
+
+                if entry != '':
+                    o.write(entry)
+
+                bar.finish()
+        print
+
+
+if __name__ == '__main__':
+    main()
