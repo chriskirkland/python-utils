@@ -4,7 +4,7 @@ from datetime import datetime
 from functools import partial
 import os
 
-from progressbar import ProgressBar, Percentage, Bar
+from progressbar import ProgressBar, Percentage, Bar, ETA
 
 """
 Extract entries in a time interval from a log file.
@@ -70,8 +70,8 @@ def main():
             with open(outfile, 'w') as o:
                 entry = ''
                 bar = ProgressBar(
-                        widgets=[Percentage(), Bar()],
-                        maxval=num_lines,
+                        widgets=[Percentage(), Bar(), ETA()],
+                        maxval=num_lines*1.2,
                         ).start()
                 for ix, line in enumerate(f):
                     starts_log, dt = process_line(
