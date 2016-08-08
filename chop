@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime
 from functools import partial
 import os
+import re
 
 from progressbar import ProgressBar, Percentage, Bar, ETA
 
@@ -25,6 +26,10 @@ def parse_commandline_args():
                         help=('Destination directory. '
                               'Defaults to directories of each logfile, resp.'
                               ))
+    parser.add_argument('--regex', action='store', dest='regex',
+                        default=None,
+                        help=('Regex pattern for matching ' +
+                              'first line in each log entry'))
     parser.add_argument('files', metavar='FILE', type=str, nargs='+',
                         help='Log file(s) to be chopped.')
     return parser.parse_args()
@@ -56,6 +61,12 @@ def main():
     start_time = str_to_datetime(args.start_time)
     end_time = str_to_datetime(args.end_time)
 
+    # setup RegExp matcher for matching first line of each entry
+    if args.regex is not None:
+        _regex = re.compile(args.regex)
+    else:
+        _regex = None
+
     for filename in args.files:
         print '***', filename, '***'
 
@@ -80,11 +91,22 @@ def main():
                     if starts_log and \
                        dt >= start_time and \
                        dt <= end_time:
+                        # skip the log entry if the first line doesn't match
+                        # the specified regex pattern
+                        if _regex is not None and \
+                           not _regex.search(line):
+                            continue
+
+                        # write the previous log entry to the file
                         if entry != '':
                             o.write(entry)
                             entry = ''
+
+                        # add the first line
                         entry += line
+
                     elif not starts_log and entry != '':
+                        # add subsequent line (multi-line log entry)
                         entry += line
 
                     bar.update(ix)
