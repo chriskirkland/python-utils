@@ -73,9 +73,10 @@ def main():
         num_lines = count_lines(filename)
 
         dest = args.dest or os.path.dirname(os.path.abspath(filename))
+        ext = '' if args.dest is not None else '.chopped'
         outfile = os.path.join(
                     dest,
-                    os.path.basename(filename) + '.chopped')
+                    os.path.basename(filename) + ext)
 
         with open(filename, 'r') as f:
             with open(outfile, 'w') as o:
