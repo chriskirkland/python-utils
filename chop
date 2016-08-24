@@ -30,6 +30,9 @@ def parse_commandline_args():
                         default=None,
                         help=('Regex pattern for matching ' +
                               'first line in each log entry'))
+    parser.add_argument('-q', '--quiet', action='store', dest='quiet',
+                        default=False,
+                        help='Don\'t show progressbar')
     parser.add_argument('files', metavar='FILE', type=str, nargs='+',
                         help='Log file(s) to be chopped.')
     return parser.parse_args()
@@ -81,7 +84,8 @@ def main():
         with open(filename, 'r') as f:
             with open(outfile, 'w') as o:
                 entry = ''
-                bar = ProgressBar(
+                if not args.quiet:
+                    bar = ProgressBar(
                         widgets=[Percentage(), Bar(), ETA()],
                         maxval=num_lines*1.2,
                         ).start()
@@ -110,12 +114,14 @@ def main():
                         # add subsequent line (multi-line log entry)
                         entry += line
 
-                    bar.update(ix)
+                    if not args.quiet:
+                        bar.update(ix)
 
                 if entry != '':
                     o.write(entry)
 
-                bar.finish()
+                if not args.quiet:
+                    bar.finish()
         print
 
 
