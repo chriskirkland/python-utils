@@ -30,7 +30,7 @@ def parse_commandline_args():
                         default=None,
                         help=('Regex pattern for matching ' +
                               'first line in each log entry'))
-    parser.add_argument('-q', '--quiet', action='store', dest='quiet',
+    parser.add_argument('-q', '--quiet', action='store_true', dest='quiet',
                         default=False,
                         help='Don\'t show progressbar')
     parser.add_argument('files', metavar='FILE', type=str, nargs='+',
